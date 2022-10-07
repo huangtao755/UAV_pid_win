@@ -22,19 +22,19 @@ def test():
     gui = Qgui.QuadrotorFlyGui([quad])
 
     # init controller
-    pid = PidControl(kp_pos=np.array([1, 1, 1]),
-                     ki_pos=np.array([0, 0, 0]),
+    pid = PidControl(kp_pos=np.array([0.5, 0.5, 0.5]),
+                     ki_pos=np.array([0, 0, 0.0]),
                      kd_pos=np.array([0, 0, 0]),
                      kp_vel=np.array([3, 3, 3]),
-                     ki_vel=np.array([0, 0, 0]),
-                     kd_vel=np.array([0, 0, 0.5]),
+                     ki_vel=np.array([0, 0, 0.01]),
+                     kd_vel=np.array([0.1, 0.1, 0.1]),
 
-                     kp_att=np.array([1, 1, 1]),
+                     kp_att=np.array([0.01, 0.01, 0.01]),
                      ki_att=np.array([0, 0, 0]),
                      kd_att=np.array([0, 0, 0]),
-                     kp_att_v=np.array([1, 1, 1]),
+                     kp_att_v=np.array([0.1, 0.1, 0.1]),
                      ki_att_v=np.array([0, 0, 0]),
-                     kd_att_v=np.array([0, 0, 0]))
+                     kd_att_v=np.array([0.1, 0.1, 0.1]))
 
     # simulator init
     step_num = 0
@@ -42,21 +42,19 @@ def test():
     pos_y = []
     pos_z = []
     pos = []
-    ref = np.array([0., 0., 5., 0.])
+    ref = np.array([0., 5., 0., 0])
 
     # simulate begin
-    for i in range(1000):
+    for i in range(1600):
         state_temp = quad.observe()
         action = pid.pid_control(state_temp, ref)
-        # action[0] = np.clip(action[0], 0, 20)
-        print(action, 'action')
         quad.step(action)
         pos_x.append(state_temp[0])
         pos_y.append(state_temp[1])
         pos_z.append(state_temp[2])
         pos = [pos_x, pos_y, pos_z]
 
-        if i % 10 == 0:
+        if i % 100 == 0:
             gui.quadGui.target = ref[0:3]
             gui.quadGui.sim_time = quad.ts
             gui.render()

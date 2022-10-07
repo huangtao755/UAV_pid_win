@@ -88,7 +88,6 @@ class PidControl(object):
         pos = state[0:3]
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
-
         if self.step_num == 0:
             self.err_d_pos = np.zeros(3)
         else:
@@ -99,6 +98,8 @@ class PidControl(object):
         ref_vel = self.kp_pos * self.err_p_pos \
                   + self.ki_pos * self.err_i_pos \
                   + self.kd_pos * self.err_d_pos  # get ref_v as input of velocity input
+
+        # print('ref_vel', ref_vel)
         # ########velocity loop######## #
         vel = state[3:6]
         err_p_vel_ = ref_vel - vel  # get new error of velocity
@@ -106,7 +107,7 @@ class PidControl(object):
         if self.step_num == 0:
             self.err_d_vel = np.zeros(3)
         else:
-            self.err_d_vel = (err_p_vel_ - self.err_d_vel) / self.ts  # get new error of vel-dot
+            self.err_d_vel = (err_p_vel_ - self.err_p_vel) / self.ts  # get new error of vel-dot
         self.err_p_vel = err_p_vel_  # update vel error
         self.err_i_vel += self.err_p_vel * self.ts  # update vel integral
 
@@ -123,7 +124,14 @@ class PidControl(object):
         phy = state[8]
         att = np.array([phi, theta, phy])
 
-        u1 = self.uav_par.uavM * (action[2] + self.uav_par.g) / (np.cos(phi) * np.cos(theta))
+        u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
+
+        print('----------------------------------')
+        print(a_pos, u1, np.cos(phi))
+        print('phi', phi)
+        print('theta', theta)
+        print('phy', phy)
+        print('__________________________________')
 
         ref_phy = ref_state[3]
         ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(phy)
@@ -131,6 +139,12 @@ class PidControl(object):
         ref_theta = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.cos(phy)
                                                    + a_pos[1] * np.sin(phy)) / (u1 * np.cos(phi)))
         ref_att = np.array([ref_phi, ref_theta, ref_phy])
+        print('----------------------------------')
+        print('ref_phi', ref_phi)
+        print('ref_theta', ref_theta)
+        print('ref_phy', ref_phy)
+        print('__________________________________')
+
         err_p_att_ = ref_att - att
 
         if self.step_num == 0:
@@ -143,6 +157,14 @@ class PidControl(object):
         ref_att_v = self.kp_att * self.err_p_att \
                     + self.ki_att * self.err_i_att \
                     + self.kd_att * self.err_d_att
+
+        print('----------------------------------')
+        print(a_pos, u1, np.cos(phi))
+        print('err_p_att', self.err_p_att)
+        print('err_i_att', self.err_i_att)
+        print('err_d_att', self.err_d_att)
+        print('ref_att_v', ref_att_v)
+        print('__________________________________')
         # ########velocity of attitude loop######## #
         att_v = state[9:12]
         err_p_att_v_ = ref_att_v - att_v
@@ -159,7 +181,6 @@ class PidControl(object):
                 + self.kd_att_v * self.err_d_att_v
 
         u = a_att * self.uav_par.uavInertia
-        print(u)
 
         action = np.array([u1, u[0], u[1], u[2]])
         self.step_num += 1
