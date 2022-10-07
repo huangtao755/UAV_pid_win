@@ -1,29 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""This file implement the GUI for QuadrotorFly
-This module refer the 'quadcopter simulator' by abhijitmajumdar
-
-By xiaobo
-Contact linxiaobo110@gmail.com
-Created on  Apr 29 20:53 2019
-"""
-
-# Copyright (C)
-#
-# This file is part of QuadrotorFly
-#
-# GWpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# GWpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import matplotlib.pyplot as plt
@@ -31,24 +7,6 @@ import mpl_toolkits.mplot3d.axes3d as axes3d
 import numpy as np
 
 import QuadrotorFlyModel as Qfm
-
-"""
-********************************************************************************************************
-**-------------------------------------------------------------------------------------------------------
-**  Compiler   : python 3.6
-**  Module Name: QuadrotorFlyGui
-**  Module Date: 2019/4/29
-**  Module Auth: xiaobo
-**  Version    : V0.1
-**  Description: 
-**-------------------------------------------------------------------------------------------------------
-**  Reversion  :
-**  Modified By:
-**  Date       :
-**  Content    :
-**  Notes      :
-********************************************************************************************************/
-"""
 
 
 class QuadrotorFlyGuiEnv(object):
