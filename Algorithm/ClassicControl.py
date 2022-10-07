@@ -20,8 +20,7 @@ class PidControl(object):
                  kd_att=np.array([0, 0, 0]),
                  kp_att_v=np.array([0, 0, 0]),
                  ki_att_v=np.array([0, 0, 0]),
-                 kd_att_v=np.array([0, 0, 0]),
-                 ):
+                 kd_att_v=np.array([0, 0, 0])):
         """
 
         :param uav_para:
@@ -160,6 +159,7 @@ class PidControl(object):
                 + self.kd_att_v * self.err_d_att_v
 
         u = a_att * self.uav_par.uavInertia
+        print(u)
 
         action = np.array([u1, u[0], u[1], u[2]])
         self.step_num += 1

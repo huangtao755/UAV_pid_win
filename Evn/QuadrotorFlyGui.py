@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as axes3d
 import numpy as np
 
-import QuadrotorFlyModel as Qfm
+from Comman import CommonFunctions as Cf
+from Comman import MemoryStore
+from Evn import QuadrotorFlyModel as Qfm
 
 
 class QuadrotorFlyGuiEnv(object):
@@ -213,7 +215,6 @@ class QuadrotorFlyGui(object):
 
 
 if __name__ == '__main__':
-    from Comman import MemoryStore, CommonFunctions as Cf
 
     " used for testing this module"
     D2R = Qfm.D2R

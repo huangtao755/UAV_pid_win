@@ -29,7 +29,7 @@ import queue
 
 import numpy as np
 
-from SensorBase import SensorBase, SensorType
+from Evn.SensorBase import SensorBase, SensorType
 
 """
 ********************************************************************************************************
