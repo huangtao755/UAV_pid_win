@@ -41,6 +41,7 @@ class PidControl(object):
         " init model "
         self.uav_par = uav_para
         self.ts = uav_para.ts
+        self.step_num = 0
         " init control para "
         self.kp_pos = kp_pos
         self.ki_pos = ki_pos
@@ -73,3 +74,52 @@ class PidControl(object):
         self.err_p_att_v = np.zeros(3)
         self.err_i_att_v = np.zeros(3)
         self.err_d_att_v = np.zeros(3)
+
+    def pid_control(self, state, ref_state):
+        """
+
+        :param state:
+        :param ref_state:
+        :return:
+        """
+        action = np.zeros(4)
+
+        " position double loop "
+        # position loop #
+        pos = state[0:3]
+        ref_pos = ref_state[0:3]
+        err_p_pos_ = ref_pos - pos  # get new error of pos
+
+        if self.step_num == 0:
+            self.err_d_pos = np.zeros(3)
+        else:
+            self.err_d_pos = (err_p_pos_ - self.err_p_pos) / self.ts  # get new error of pos-dot
+        self.err_p_pos = err_p_pos_  # update pos error
+        self.err_i_pos += self.err_p_pos * self.ts  # update pos integral
+
+        ref_vel = self.kp_pos * self.err_p_pos \
+                  + self.ki_pos * self.err_i_pos \
+                  + self.kd_pos * self.err_d_pos  # get ref_v as input of velocity input
+
+        # velocity loop #
+        vel = state[3:6]
+        err_p_vel_ = ref_vel - vel  # get new error of velocity
+
+        if self.step_num == 0:
+            self.err_d_vel = np.zeros(3)
+        else:
+            self.err_d_vel = (err_p_vel_ - self.err_d_vel) / self.ts  # get new error of vel-dot
+        self.err_p_vel = err_p_vel_  # update vel error
+        self.err_i_vel += self.err_p_vel * self.ts  # update vel integral
+
+        a_pos = self.kp_vel * self.err_p_vel \
+                + self.ki_vel * self.err_i_vel \
+                + self.kd_vel * self.err_d_vel  # get the output u of 3D for position loop
+
+        a_pos[2] += self.uav_par.g  # gravity compensation in z-axis
+
+        " attitude double loop "
+        # attitude loop #
+        phi = state[6]
+        theta = state[7]
+        phy = state[8]
