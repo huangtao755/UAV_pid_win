@@ -551,6 +551,7 @@ class QuadModel(object):
         phi = state[6]
         theta = state[7]
         phy = state[8]
+
         phy_ref = ref_state[3]
         phi_ref = np.arcsin(self.uavPara.uavM * (a_pos[0] * np.sin(phy) - a_pos[1] * np.cos(phy)) / u1)
         theta_ref = np.arcsin(

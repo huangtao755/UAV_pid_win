@@ -81,6 +81,8 @@ class PidControl(object):
         :param ref_state:
         :return:
         """
+        print(
+            '______________________________________step%d simulation_______________________________________________' % self.step_num)
         action = np.zeros(4)
 
         " _______________position double loop_______________ "
@@ -116,7 +118,6 @@ class PidControl(object):
                 + self.kd_vel * self.err_d_vel  # get the output u of 3D for position loop
 
         a_pos[2] += self.uav_par.g  # gravity compensation in z-axis
-
         " ________________attitude double loop_______________ "
         # ########attitude loop######## #
         phi = state[6]
@@ -124,7 +125,9 @@ class PidControl(object):
         phy = state[8]
         att = np.array([phi, theta, phy])
 
-        u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
+        # u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
+        u1 = self.uav_par.uavM * np.sqrt(sum(np.square(a_pos)))
+        u1 = u1.clip(0, 30)
 
         print('----------------------------------')
         print(a_pos, u1, np.cos(phi))
@@ -134,10 +137,9 @@ class PidControl(object):
         print('__________________________________')
 
         ref_phy = ref_state[3]
-        ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(phy)
-                                                 - a_pos[1] * np.cos(phy)) / u1)
-        ref_theta = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.cos(phy)
-                                                   + a_pos[1] * np.sin(phy)) / (u1 * np.cos(phi)))
+        ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(phy) - a_pos[1] * np.cos(phy)) / u1)
+        ref_theta = np.arcsin(
+            self.uav_par.uavM * (a_pos[0] * np.cos(phy) + a_pos[1] * np.sin(phy)) / (u1 * np.cos(ref_phi)))
         ref_att = np.array([ref_phi, ref_theta, ref_phy])
         print('----------------------------------')
         print('ref_phi', ref_phi)
@@ -179,6 +181,7 @@ class PidControl(object):
         a_att = self.kp_att_v * self.err_p_att_v \
                 + self.ki_att_v * self.err_i_att_v \
                 + self.kd_att_v * self.err_d_att_v
+        a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
 
         u = a_att * self.uav_par.uavInertia
 
