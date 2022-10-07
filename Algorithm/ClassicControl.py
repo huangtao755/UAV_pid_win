@@ -84,8 +84,8 @@ class PidControl(object):
         """
         action = np.zeros(4)
 
-        " position double loop "
-        # position loop #
+        " _______________position double loop_______________ "
+        # ########position loop######## #
         pos = state[0:3]
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
@@ -100,8 +100,7 @@ class PidControl(object):
         ref_vel = self.kp_pos * self.err_p_pos \
                   + self.ki_pos * self.err_i_pos \
                   + self.kd_pos * self.err_d_pos  # get ref_v as input of velocity input
-
-        # velocity loop #
+        # ########velocity loop######## #
         vel = state[3:6]
         err_p_vel_ = ref_vel - vel  # get new error of velocity
 
@@ -118,8 +117,70 @@ class PidControl(object):
 
         a_pos[2] += self.uav_par.g  # gravity compensation in z-axis
 
-        " attitude double loop "
-        # attitude loop #
+        " ________________attitude double loop_______________ "
+        # ########attitude loop######## #
         phi = state[6]
         theta = state[7]
         phy = state[8]
+        att = np.array([phi, theta, phy])
+
+        u1 = self.uav_par.uavM * (action[2] + self.uav_par.g) / (np.cos(phi) * np.cos(theta))
+
+        ref_phy = ref_state[3]
+        ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(phy)
+                                                 - a_pos[1] * np.cos(phy)) / u1)
+        ref_theta = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.cos(phy)
+                                                   + a_pos[1] * np.sin(phy)) / (u1 * np.cos(phi)))
+        ref_att = np.array([ref_phi, ref_theta, ref_phy])
+        err_p_att_ = ref_att - att
+
+        if self.step_num == 0:
+            self.err_d_att = np.zeros(3)
+        else:
+            self.err_d_att = (err_p_att_ - self.err_p_att) / self.ts
+        self.err_p_att = err_p_att_
+        self.err_i_att += self.err_p_att * self.ts
+
+        ref_att_v = self.kp_att * self.err_p_att \
+                    + self.ki_att * self.err_i_att \
+                    + self.kd_att * self.err_d_att
+        # ########velocity of attitude loop######## #
+        att_v = state[9:12]
+        err_p_att_v_ = ref_att_v - att_v
+
+        if self.step_num == 0:
+            self.err_d_att_v = 0
+        else:
+            self.err_d_att_v = (err_p_att_v_ - self.err_p_att_v) / self.ts
+        self.err_p_att_v = err_p_att_v_
+        self.err_i_att_v += self.err_p_att_v * self.ts
+
+        a_att = self.kp_att_v * self.err_p_att_v \
+                + self.ki_att_v * self.err_i_att_v \
+                + self.kd_att_v * self.err_d_att_v
+
+        u = a_att * self.uav_par.uavInertia
+
+        action = np.array([u1, u[0], u[1], u[2]])
+        self.step_num += 1
+
+        return action
+
+    def reset(self):
+        self.step_num = 0
+        " simulation state "
+        self.err_p_pos = np.zeros(3)
+        self.err_i_pos = np.zeros(3)
+        self.err_d_pos = np.zeros(3)
+
+        self.err_p_vel = np.zeros(3)
+        self.err_i_vel = np.zeros(3)
+        self.err_d_vel = np.zeros(3)
+
+        self.err_p_att = np.zeros(3)
+        self.err_i_att = np.zeros(3)
+        self.err_d_att = np.zeros(3)
+
+        self.err_p_att_v = np.zeros(3)
+        self.err_i_att_v = np.zeros(3)
+        self.err_d_att_v = np.zeros(3)
