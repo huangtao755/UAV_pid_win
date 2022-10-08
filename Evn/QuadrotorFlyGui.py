@@ -71,6 +71,7 @@ class QuadrotorFlyGuiUav(object):
             self.traject.append([[], [], []])
             label = self.ax.text([], [], [], 'qua' + str(index), fontsize='11')
             target_point, = self.ax.plot([], [], [], marker='o', color='green', markersize=11, antialiased=False)
+            origin_point, = self.ax.plot([], [], [], marker='o', color='black', markersize=6, antialiased=False)
             pos = self.ax.text2D(0.02, 0.87 - 0.03 * index, 'pos_%d/m:' % index + str([0, 0, 0]),
                                  transform=self.ax.transAxes,
                                  fontsize='11')
@@ -86,7 +87,7 @@ class QuadrotorFlyGuiUav(object):
                 bar_y, = self.ax.plot([], [], [], color='black', linewidth=4, antialiased=False)
                 head_x, = self.ax.plot([], [], [], marker='o', color='green', markersize=6, antialiased=False)
                 self.quadGui.append({'pos': pos, 'attu': attu, 'hub': hub, 'barX': bar_x, 'barY': bar_y, 'label': label,
-                                     'target_point': target_point, 'head_x': head_x})
+                                     'target_point': target_point, 'head_x': head_x, 'origin_point': origin_point})
             elif quad_temp.uavPara.structureType == Qfm.StructureType.quad_x:
                 front_bar1, = self.ax.plot([], [], [], color='red', linewidth=4, antialiased=False)
                 front_bar2, = self.ax.plot([], [], [], color='red', linewidth=4, antialiased=False)
@@ -97,7 +98,7 @@ class QuadrotorFlyGuiUav(object):
                 self.quadGui.append(
                     {'pos': pos, 'attu': attu, 'hub': hub, 'bar_frontLeft': front_bar1, 'bar_frontRight': front_bar2,
                      'bar_rearLeft': back_bar1, 'bar_rearRight': back_bar2, 'label': label,
-                     'target_point': target_point, 'head_x': head_x})
+                     'target_point': target_point, 'head_x': head_x, 'origin_point': origin_point})
 
     def draw_surface(self):
         x = np.arange(-5, 5, 1)
@@ -133,11 +134,16 @@ class QuadrotorFlyGuiUav(object):
                                                             % (position[0], position[1], position[2])))
             quad_gui['attu'].set_text(('attu_%d/dgree:' % ii + str('[%.6f, %.6f, %.6f]'
                                                                    % (
-                                                                   attitude[0] / np.pi * 180, attitude[1] / np.pi * 180,
-                                                                   attitude[2] / np.pi * 180))))
+                                                                       attitude[0] / np.pi * 180,
+                                                                       attitude[1] / np.pi * 180,
+                                                                       attitude[2] / np.pi * 180))))
             # draw target_point
             quad_gui['target_point'].set_data(self.target[0], self.target[1])
             quad_gui['target_point'].set_3d_properties(self.target[2])
+
+            # draw origin point
+            quad_gui['origin_point'].set_data(0, 0)
+            quad_gui['origin_point'].set_3d_properties(0)
             # add traject data
             for ij in range(3):
                 self.traject[ii][ij].append(position[ij])

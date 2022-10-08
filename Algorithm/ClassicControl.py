@@ -90,6 +90,8 @@ class PidControl(object):
         pos = state[0:3]
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
+        err_p_pos_ = err_p_pos_.clip(np.array([-5, -5, -5]), np.array([5, 5, 5]))
+
         if self.step_num == 0:
             self.err_d_pos = np.zeros(3)
         else:
@@ -127,7 +129,7 @@ class PidControl(object):
 
         # u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
         u1 = self.uav_par.uavM * np.sqrt(sum(np.square(a_pos)))
-        u1 = u1.clip(0, 30)
+        u1 = u1.clip(-30, 30)
 
         print('----------------------------------')
         print(a_pos, u1, np.cos(phi))
@@ -181,6 +183,7 @@ class PidControl(object):
         a_att = self.kp_att_v * self.err_p_att_v \
                 + self.ki_att_v * self.err_i_att_v \
                 + self.kd_att_v * self.err_d_att_v
+
         a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
 
         u = a_att * self.uav_par.uavInertia
