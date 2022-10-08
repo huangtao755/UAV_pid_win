@@ -91,6 +91,7 @@ class PidControl(object):
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
         err_p_pos_ = err_p_pos_.clip(np.array([-5, -5, -5]), np.array([5, 5, 5]))
+        print('err_p_pos_', err_p_pos_)
 
         if self.step_num == 0:
             self.err_d_pos = np.zeros(3)
@@ -103,11 +104,11 @@ class PidControl(object):
                   + self.ki_pos * self.err_i_pos \
                   + self.kd_pos * self.err_d_pos  # get ref_v as input of velocity input
 
-        # print('ref_vel', ref_vel)
+        print('ref_vel', ref_vel)
         # ########velocity loop######## #
         vel = state[3:6]
         err_p_vel_ = ref_vel - vel  # get new error of velocity
-
+        print('err_p_vel_', err_p_vel_)
         if self.step_num == 0:
             self.err_d_vel = np.zeros(3)
         else:
@@ -118,8 +119,9 @@ class PidControl(object):
         a_pos = self.kp_vel * self.err_p_vel \
                 + self.ki_vel * self.err_i_vel \
                 + self.kd_vel * self.err_d_vel  # get the output u of 3D for position loop
-
+        print('original', a_pos)
         a_pos[2] += self.uav_par.g  # gravity compensation in z-axis
+        print('a_pos', a_pos)
         " ________________attitude double loop_______________ "
         # ########attitude loop######## #
         phi = state[6]
@@ -127,12 +129,11 @@ class PidControl(object):
         phy = state[8]
         att = np.array([phi, theta, phy])
 
-        # u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
+        u1 = self.uav_par.uavM * a_pos[2] / (np.cos(phi) * np.cos(theta))
+        print('original_u1', u1)
         u1 = self.uav_par.uavM * np.sqrt(sum(np.square(a_pos)))
-        u1 = u1.clip(-30, 30)
-
+        print('other', u1)
         print('----------------------------------')
-        print(a_pos, u1, np.cos(phi))
         print('phi', phi)
         print('theta', theta)
         print('phy', phy)
@@ -140,11 +141,12 @@ class PidControl(object):
 
         ref_phy = ref_state[3]
         ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(phy) - a_pos[1] * np.cos(phy)) / u1)
+
         ref_theta = np.arcsin(
-            self.uav_par.uavM * (a_pos[0] * np.cos(phy) + a_pos[1] * np.sin(phy)) / (u1 * np.cos(ref_phi)))
+            self.uav_par.uavM * (a_pos[0] * np.cos(phy) + a_pos[1] * np.sin(phy)) / (u1 * np.cos(theta)))
         ref_att = np.array([ref_phi, ref_theta, ref_phy])
         print('----------------------------------')
-        print('ref_phi', ref_phi)
+        print('ref_phi', self.uav_par.uavM * (a_pos[0] * np.sin(ref_phy) - a_pos[1] * np.cos(ref_phy)) / u1)
         print('ref_theta', ref_theta)
         print('ref_phy', ref_phy)
         print('__________________________________')
@@ -184,7 +186,7 @@ class PidControl(object):
                 + self.ki_att_v * self.err_i_att_v \
                 + self.kd_att_v * self.err_d_att_v
 
-        a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
+        a_att = a_att.clip([-50, -50, -50], [50, 50, 50])
 
         u = a_att * self.uav_par.uavInertia
 

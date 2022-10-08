@@ -13,7 +13,7 @@ def point_track():
     print("PID controller test")
     uav_para = Qfm.QuadParas(structure_type=Qfm.StructureType.quad_x)
     sim_para = Qfm.QuadSimOpt(init_mode=Qfm.SimInitType.fixed,
-                              init_att=np.array([0, 0, 0]), init_pos=np.array([-10, -20, -10]))
+                              init_att=np.array([0, 0, 0]), init_pos=np.array([0, 0, 0]))
     quad = Qfm.QuadModel(uav_para, sim_para)
     record = MemoryStore.DataRecord()
     record.clear()
@@ -26,8 +26,8 @@ def point_track():
                      kp_pos=np.array([0.9, 0.9, 1]),
                      ki_pos=np.array([0, 0., 0.0]),
                      kd_pos=np.array([0, 0, 0]),
-                     kp_vel=np.array([2.9, 2.9, 3.0]),
-                     ki_vel=np.array([0.01, 0.01, 0.01]),
+                     kp_vel=np.array([2.9, 2.9, 3.]),
+                     ki_vel=np.array([0.0, 0.0, 0.0]),
                      kd_vel=np.array([0.06, 0.06, 0.05]),
 
                      kp_att=np.array([5.5, 5.5, 3]),
@@ -43,10 +43,10 @@ def point_track():
     pos_y = []
     pos_z = []
     pos = []
-    ref = np.array([15, 15, 15, 0])
-    print(quad.observe())
+    ref = np.array([0, 5, 0, 0])
+    print(quad.observe(), 'observe')
     # simulate begin
-    for i in range(1500):
+    for i in range(50):
         state_temp = quad.observe()
         action = pid.pid_control(state_temp, ref)
         quad.step(action)
@@ -110,41 +110,53 @@ def traject_track():
 
     # init controller
     pid = PidControl(uav_para=uav_para,
-                     kp_pos=np.array([0.9, 0.9, 1]),
+                     kp_pos=np.array([0.9, 0.9, 1.2]),
                      ki_pos=np.array([0, 0., 0.0]),
                      kd_pos=np.array([0, 0, 0]),
-                     kp_vel=np.array([2.9, 2.9, 3.0]),
-                     ki_vel=np.array([0.01, 0.01, 0.01]),
-                     kd_vel=np.array([0.06, 0.06, 0.05]),
+                     kp_vel=np.array([2.9, 2.9, 5]),
+                     ki_vel=np.array([0.01, 0.01, 0.1]),
+                     kd_vel=np.array([0.06, 0.06, 0.1]),
 
-                     kp_att=np.array([5.5, 5.5, 3]),
+                     kp_att=np.array([5.5, 5.5, 5.5]),
                      ki_att=np.array([0., 0, 0]),
                      kd_att=np.array([0, 0, 0]),
-                     kp_att_v=np.array([30, 30, 10]),
-                     ki_att_v=np.array([0.01, 0.01, 0.]),
-                     kd_att_v=np.array([0.01, 0.01, 0.1]))
+                     kp_att_v=np.array([30, 30, 30]),
+                     ki_att_v=np.array([0.01, 0.01, 0.01]),
+                     kd_att_v=np.array([0.01, 0.01, 0.01]))
 
     # simulator init
     step_num = 0
-    pos_x = []
-    pos_y = []
-    pos_z = []
-    pos = []
+    track_err = []
     # ref = np.array([15, -15, -15, 0])
     print(quad.observe())
     # simulate begin
-    for i in range(30000):
-        ref = np.array([3 * np.cos(np.pi / 18 * quad.ts + np.pi),
-                        3 * np.sin(np.pi / 18 * quad.ts + np.pi), 0.05 * quad.ts, np.pi / 18 * quad.ts])
-        state_temp = quad.observe()
-        action = pid.pid_control(state_temp, ref)
-        quad.step(action)
-        pos_x.append(state_temp[0])
-        pos_y.append(state_temp[1])
-        pos_z.append(state_temp[2])
-        pos = [pos_x, pos_y, pos_z]
+    for i in range(10000):
 
-        if i % 20 == 0:
+        ref = np.array([5 * np.cos(np.pi / 18 * quad.ts + np.pi),
+                        5 * np.sin(np.pi / 18 * quad.ts + np.pi),
+                        5 * np.cos(np.pi / 6 * quad.ts + np.pi),
+                        np.pi / 18 * quad.ts])
+
+        ref_v = np.array([-np.pi * np.sin(np.pi / 18 * quad.ts + np.pi) * 5 / 18,
+                          np.pi * np.cos(np.pi / 18 * quad.ts + np.pi) * 5 / 18,
+                          -np.pi * np.sin(np.pi / 6 * quad.ts + np.pi) * 5 / 6,
+                          np.pi / 18])  # target velocity
+
+        state_temp = quad.observe()
+        state_compensate = state_temp - np.array([0, 0, 0,
+                                                  ref_v[0], ref_v[1], ref_v[2],
+                                                  0, 0, 0,
+                                                  0, 0, ref_v[3]])
+        # state_compensate = state_temp
+        action = pid.pid_control(state_compensate, ref)
+        quad.step(action)
+
+        track_err.append([ref[0] - state_temp[0],
+                          ref[1] - state_temp[1],
+                          ref[2] - state_temp[2],
+                          ref[3] - state_temp[8]])
+
+        if i % 100 == 0:
             gui.quadGui.target = ref[0:3]
             gui.quadGui.sim_time = quad.ts
             gui.render()
@@ -152,11 +164,13 @@ def traject_track():
         print(state_temp[8], ''' angle''')
         record.buffer_append((state_temp, action))
         step_num += 1
-
+    track_err = np.array(track_err)
+    print(track_err)
     record.episode_append()
     data = record.get_episode_buffer()
     bs = data[0]
     ba = data[1]
+    print(type(ba), type(track_err))
     t = range(0, record.count)
     ts = np.array(t) * pid.ts
     # mpl.style.use('seaborn')
@@ -175,7 +189,7 @@ def traject_track():
     plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
     plt.subplot(4, 1, 3)
     plt.plot(ts, bs[t, 2], label='z')
-    plt.ylabel('Altitude (m)', fontsize=15)
+    plt.ylabel('Altitude $(\circ)$', fontsize=15)
     plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
     plt.subplot(4, 1, 4)
     plt.plot(ts, ba[t, 0], label='f')
@@ -184,8 +198,20 @@ def traject_track():
     plt.plot(ts, ba[t, 3] / uav_para.uavInertia[2], label='t3')
     plt.ylabel('f (m/s^2)', fontsize=15)
     plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
+
+    fig2 = plt.figure(3)
+    plt.subplot(2, 1, 1)
+    plt.plot(ts, track_err[t, 0], label='x')
+    plt.plot(ts, track_err[t, 1], label='y')
+    plt.plot(ts, track_err[t, 2], label='z')
+    plt.ylabel('error/m', fontsize=15)
+    plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
+    plt.subplot(2, 1, 2)
+    plt.plot(ts, track_err[t, 3], label='err_phi')
+    plt.ylabel('Altitude_err $(\circ)$', fontsize=15)
+    plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
     plt.show()
 
 
 if __name__ == "__main__":
-    traject_track()
+    point_track()
