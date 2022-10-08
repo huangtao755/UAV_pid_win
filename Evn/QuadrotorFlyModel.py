@@ -553,9 +553,9 @@ class QuadModel(object):
         phy = state[8]
 
         phy_ref = ref_state[3]
-        phi_ref = np.arcsin(self.uavPara.uavM * (a_pos[0] * np.sin(phy) - a_pos[1] * np.cos(phy)) / u1)
+        phi_ref = np.arcsin(self.uavPara.uavM * (a_pos[0] * np.sin(phy_ref) - a_pos[1] * np.cos(phy_ref)) / u1)
         theta_ref = np.arcsin(
-            self.uavPara.uavM * (a_pos[0] * np.cos(phy) + a_pos[1] * np.sin(phy)) / (u1 * np.cos(theta)))
+            self.uavPara.uavM * (a_pos[0] * np.cos(phy_ref) + a_pos[1] * np.sin(phy_ref)) / (u1 * np.cos(phi_ref)))
         angle = np.array([phi, theta, phy])
         # print(angle, 'angle')
         angle_ref = np.array((phi_ref, theta_ref, phy_ref))

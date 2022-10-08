@@ -89,7 +89,7 @@ class PidControl(object):
         pos = state[0:3]
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
-        err_p_pos_ = err_p_pos_.clip(np.array([-6, -6, -6]), np.array([6, 6, 6]))
+        err_p_pos_ = err_p_pos_.clip(np.array([-8, -8, -8]), np.array([8, 8, 8]))
 
         if self.step_num == 0:
             self.err_d_pos = np.zeros(3)
@@ -116,9 +116,9 @@ class PidControl(object):
                 + self.ki_vel * self.err_i_vel \
                 + self.kd_vel * self.err_d_vel  # get the output u of 3D for position loop
 
-        a_pos = a_pos.clip(np.array([-30, -30, -30]), np.array([30, 30, 30]))
+        # a_pos = a_pos.clip(np.array([-30, -30, -30]), np.array([30, 30, 30]))
         a_pos[2] += self.uav_par.g  # gravity compensation in z-axis
-        a_pos[2] = max(0.1, a_pos[2])
+        a_pos[2] = max(0.01, a_pos[2])
 
         " ________________attitude double loop_______________ "
         # ########attitude loop######## #
@@ -131,11 +131,11 @@ class PidControl(object):
         # print('original_u1', u1)
         u1 = self.uav_par.uavM * np.sqrt(sum(np.square(a_pos)))
 
-        print('----------------------------------')
-        print('phi', phi)
-        print('theta', theta)
-        print('phy', phy)
-        print('__________________________________')
+        # print('----------------------------------')
+        # print('phi', phi)
+        # print('theta', theta)
+        # print('phy', phy)
+        # print('__________________________________')
 
         ref_phy = ref_state[3]
         ref_phi = np.arcsin(self.uav_par.uavM * (a_pos[0] * np.sin(ref_phy) - a_pos[1] * np.cos(ref_phy)) / u1)
@@ -144,11 +144,11 @@ class PidControl(object):
             self.uav_par.uavM * (a_pos[0] * np.cos(ref_phy) + a_pos[1] * np.sin(ref_phy)) / (u1 * np.cos(ref_phi)))
         ref_att = np.array([ref_phi, ref_theta, ref_phy])
 
-        print('----------------------------------')
-        print('ref_phi', ref_phi)
-        print('ref_theta', ref_theta)
-        print('ref_phy', ref_phy)
-        print('__________________________________')
+        # print('----------------------------------')
+        # print('ref_phi', ref_phi)
+        # print('ref_theta', ref_theta)
+        # print('ref_phy', ref_phy)
+        # print('__________________________________')
 
         err_p_att_ = ref_att - att
 
@@ -163,12 +163,12 @@ class PidControl(object):
                     + self.ki_att * self.err_i_att \
                     + self.kd_att * self.err_d_att
 
-        print('----------------------------------')
-        print('err_p_att', self.err_p_att)
-        print('err_i_att', self.err_i_att)
-        print('err_d_att', self.err_d_att)
-        print('ref_att_v', ref_att_v)
-        print('__________________________________')
+        # print('----------------------------------')
+        # print('err_p_att', self.err_p_att)
+        # print('err_i_att', self.err_i_att)
+        # print('err_d_att', self.err_d_att)
+        # print('ref_att_v', ref_att_v)
+        # print('__________________________________')
         # ########velocity of attitude loop######## #
         att_v = state[9:12]
         err_p_att_v_ = ref_att_v - att_v
@@ -184,7 +184,7 @@ class PidControl(object):
                 + self.ki_att_v * self.err_i_att_v \
                 + self.kd_att_v * self.err_d_att_v
 
-        a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
+        # a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
 
         u = a_att * self.uav_par.uavInertia
 
