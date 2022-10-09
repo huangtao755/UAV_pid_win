@@ -7,9 +7,9 @@ cite:
 """
 import random
 from collections import deque
-import pandas as pd
 
 import numpy as np
+import pandas as pd
 
 
 class ReplayBuffer(object):
@@ -167,7 +167,8 @@ class DataRecord(object):
         if self.compatibilityMode:
             self.episodePos.append(self.count)
 
-    def save_data(self, path, data_name : str, data):
+    @staticmethod
+    def save_data(path, data_name, data):
         """
 
         :param path:
@@ -176,7 +177,8 @@ class DataRecord(object):
         :return:
         """
         print('---------------------------------------')
-        name = str(path+'\\'+data_name+'.csv')
+        name = str(path + '//' + data_name + '.csv')
+        print(name)
         pd.DataFrame(data).to_csv(name)
         print(data_name + 'data is saved')
 

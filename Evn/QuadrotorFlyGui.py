@@ -72,10 +72,10 @@ class QuadrotorFlyGuiUav(object):
             label = self.ax.text([], [], [], 'qua' + str(index), fontsize='11')
             target_point, = self.ax.plot([], [], [], marker='o', color='green', markersize=11, antialiased=False)
             origin_point, = self.ax.plot([], [], [], marker='o', color='black', markersize=6, antialiased=False)
-            pos = self.ax.text2D(0.02, 0.87 - 0.03 * index, 'pos_%d/m:' % index + str([0, 0, 0]),
+            pos = self.ax.text2D(0.02, 0.87 - 0.09 * index, 'pos_%d/m:' % index + str([0, 0, 0]),
                                  transform=self.ax.transAxes,
                                  fontsize='11')
-            attu = self.ax.text2D(0.02, 0.84 - 0.03 * index, 'pos_%d/m:' % index + str([0, 0, 0]),
+            attu = self.ax.text2D(0.02, 0.84 - 0.09 * index, 'pos_%d/m:' % index + str([0, 0, 0]),
                                   transform=self.ax.transAxes,
                                   fontsize='11')
 

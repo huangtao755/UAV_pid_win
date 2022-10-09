@@ -1,51 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""This file implement many common methods and constant
-
-By xiaobo
-Contact linxiaobo110@gmail.com
-Created on  五月 05 11:03 2019
-"""
-
-# Copyright (C)
-#
-# This file is part of QuadrotorFly
-#
-# GWpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# GWpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import warnings
 
 import numpy as np
-
-"""
-********************************************************************************************************
-**-------------------------------------------------------------------------------------------------------
-**  Compiler   : python 3.6
-**  Module Name: CommonFunctions
-**  Module Date: 2019/5/5
-**  Module Auth: xiaobo
-**  Version    : V0.1
-**  Description: create the file
-**-------------------------------------------------------------------------------------------------------
-**  Reversion  :
-**  Modified By:
-**  Date       :
-**  Content    :
-**  Notes      :
-********************************************************************************************************/
-"""
 
 D2R = np.pi / 180
 

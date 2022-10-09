@@ -4,9 +4,10 @@
 """
 introduction:
 """
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
 from Algorithm.ClassicControl import PidControl
 from Comman import MemoryStore
@@ -37,19 +38,19 @@ class QuadControl(object):
                                        init_pos=init_pos)
         self.quad = Qfm.QuadModel(self.uav_para, self.sim_para)
         self.pid = PidControl(uav_para=self.uav_para,
-                              kp_pos=np.array([0.5, 0.5, 0.5]),
+                              kp_pos=np.array([0.52, 0.52, 0.52]),
                               ki_pos=np.array([0, 0., 0.0]),
                               kd_pos=np.array([0, 0, 0]),
-                              kp_vel=np.array([1.4, 1.4, 1.4]),
-                              ki_vel=np.array([0.01, 0.01, 0.01]),
-                              kd_vel=np.array([0.15, 0.15, 0.1]),
+                              kp_vel=np.array([1.6, 1.6, 1.8]),
+                              ki_vel=np.array([0.0, 0.0, 0.0]),
+                              kd_vel=np.array([0.05, 0.05, 0.05]),
 
-                              kp_att=np.array([2, 2, 2.]),
+                              kp_att=np.array([2., 2., 2.]),
                               ki_att=np.array([0., 0, 0]),
                               kd_att=np.array([0, 0, 0]),
-                              kp_att_v=np.array([14, 14, 10]),
-                              ki_att_v=np.array([0.01, 0.01, 0.01]),
-                              kd_att_v=np.array([0., 0., 0.01]))
+                              kp_att_v=np.array([25, 25, 10]),
+                              ki_att_v=np.array([0.0, 0.0, 0.0]),
+                              kd_att_v=np.array([0.05, 0.05, 0.01]))
 
         self.state_temp = self.quad.observe()
         self.record = MemoryStore.DataRecord()
@@ -83,8 +84,9 @@ class QuadControl(object):
                                ref[1] - self.state_temp[1],
                                ref[2] - self.state_temp[2],
                                ref[3] - self.state_temp[8]])
-
-        self.record.buffer_append((self.state_temp, action, track_err))
+        err_state = self.pid.err
+        print((self.state_temp, action, track_err, err_state), 'err_state')
+        self.record.buffer_append((self.state_temp, action, track_err, err_state))
 
         self.step_num += 1
         print('steps_num', self.step_num)
@@ -101,12 +103,19 @@ class QuadControl(object):
         state_data = data[0]
         action_data = data[1]
         track_err_data = data[2]
-        self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_state',
+
+        self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=str(self.name + '_state'),
                               data=state_data)
         self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_action',
                               data=action_data)
         self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_track_err',
                               data=track_err_data)
+        if len(data) == 4:
+            err_state = data[3]
+            self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_state_err',
+                                  data=err_state)
+        else:
+            print('Have no state_err')
 
     def reset(self, att, pos):
         """
@@ -155,7 +164,7 @@ class QuadControl(object):
         plt.plot(ts, ba[t, 3] / self.uav_para.uavInertia[2], label='t3')
         plt.ylabel('f (m/s^2)', fontsize=15)
         plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
-        print(data)
+        # print(data)
         if len(data) == 3:
             err = data[2]
             self.fig1 = plt.figure(int(i * 3 + 1))
@@ -183,28 +192,28 @@ def main():
 
     :return:
     """
-    quad1 = QuadControl(init_pos=np.array([-5, 0, 0]), name='quad1')
-    quad2 = QuadControl(init_pos=np.array([-5, 0, 0]), name='quad2')
+    quad1 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad1')
+    quad2 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad2')
     gui = Qgui.QuadrotorFlyGui([quad1.quad, quad2.quad])
-    steps = 1000
-    ref = np.array([-15, -15, -15, 0])
+    steps = 5000
+    ref = np.array([-10, -10, -10, 0])
+    ref_v = np.array([0, 0, 0, 0])
     for i in range(steps):
-        # ref = np.array([5 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
-        #                 5 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
+        # ref = np.array([3 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
+        #                 3 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
         #                 0.2 * quad1.quad.ts,
         #                 np.pi / 18 * quad1.quad.ts])
+        # ref_v = np.array([-np.pi * np.sin(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
+        #                  np.pi * np.cos(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
+        #                  0.2,
+        #                  np.pi / 18])  # target velocity
 
-        # ref_v1 = np.array([-np.pi * np.sin(np.pi / 18 * (quad1.quad.ts) + np.pi) * 5 / 18,
-        #                    np.pi * np.cos(np.pi / 18 * (quad1.quad.ts) + np.pi) * 5 / 18,
-        #                    0.2,
-        #                    np.pi / 18])  # target velocity
-        ref_v1 = np.array([0, 0, 0, 0])
         quad2.state_temp = quad2.quad.observe()
-        quad1.track(ref=ref, ref_v=ref_v1, steps=steps)
+        quad1.track(ref=ref, ref_v=ref_v, steps=steps)
         state_compensate = quad2.state_temp - np.array([0, 0, 0,
-                                                        ref_v1[0], ref_v1[1], ref_v1[2],
+                                                        ref_v[0], ref_v[1], ref_v[2],
                                                         0, 0, 0,
-                                                        0, 0, ref_v1[3]])
+                                                        0, 0, ref_v[3]])
         action2 = quad2.quad.controller_pid(state=state_compensate, ref_state=ref)
         quad2.quad.step(action2)
         track_err = np.hstack([ref[0] - quad2.state_temp[0],
@@ -219,6 +228,7 @@ def main():
             gui.quadGui.sim_time = quad1.quad.ts
             gui.render()
     quad1.data_save()
+    print('datasave')
     quad2.record.episode_append()
     quad2.data_save()
 

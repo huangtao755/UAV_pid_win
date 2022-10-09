@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import torch as t
 
 import Evn.QuadrotorFlyModel as Qfm
 
@@ -74,6 +75,8 @@ class PidControl(object):
         self.err_i_att_v = np.zeros(3)
         self.err_d_att_v = np.zeros(3)
 
+        self.err = np.zeros(12)
+
     def pid_control(self, state, ref_state):
         """
 
@@ -89,7 +92,8 @@ class PidControl(object):
         pos = state[0:3]
         ref_pos = ref_state[0:3]
         err_p_pos_ = ref_pos - pos  # get new error of pos
-        err_p_pos_ = err_p_pos_.clip(np.array([-8, -8, -8]), np.array([8, 8, 8]))
+        err_p_pos_ = np.array(8 * t.tanh(t.tensor(err_p_pos_ / 8)))
+        # err_p_pos_ = err_p_pos_.clip(np.array([-8, -8, -8]), np.array([8, 8, 8]))
 
         if self.step_num == 0:
             self.err_d_pos = np.zeros(3)
@@ -184,11 +188,13 @@ class PidControl(object):
                 + self.ki_att_v * self.err_i_att_v \
                 + self.kd_att_v * self.err_d_att_v
 
-        # a_att = a_att.clip([-30, -30, -30], [30, 30, 30])
+        # a_att = a_att.clip([-25, -25, -25], [25, 25, 25])
+        a_att = np.array(20 * t.tanh(t.tensor(a_att / 20)))
 
         u = a_att * self.uav_par.uavInertia
 
         action = np.array([u1, u[0], u[1], u[2]])
+        self.err = np.array(np.hstack((self.err_p_pos, self.err_p_vel, self.err_p_att, self.err_p_att_v)))
         self.step_num += 1
 
         return action

@@ -1,54 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The file used to implement the data store and replay
-
-By xiaobo
-Contact linxiaobo110@gmail.com
-Created on Wed Jan 17 10:40:44 2018
-"""
-# Copyright (C)
-#
-# This file is part of QuadrotorFly
-#
-# GWpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# GWpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import torch as t
 from torch.autograd import Variable
 
-"""
-********************************************************************************************************
-**-------------------------------------------------------------------------------------------------------
-**  Compiler   : python 3.6
-**  Module Name: MemoryStore
-**  Module Date: 2018-04-17
-**  Module Auth: xiaobo
-**  Version    : V0.1
-**  Description: create the module
-**-------------------------------------------------------------------------------------------------------
-**  Reversion  : V0.2
-**  Modified By: xiaobo
-**  Date       : 2019-4-25
-**  Content    : rewrite the module, add note
-**  Notes      :
-"""
-
-"""
-*********************************************************************************************************
-Define nural network
-*********************************************************************************************************
-"""
 
 t.manual_seed(5)
 
@@ -59,7 +15,7 @@ learning_rate = 0.005
 learning_num = 1000
 sim_num = 20
 x0 = np.array([2, -1])
-epislon = 0.0001
+epsilon = 0.0001
 Fre_V1_paras = 5
 
 
@@ -142,7 +98,7 @@ class ADPSingleNet(object):
         for train_index in range(learning_num):
 
             "Step one; get data"
-            state, action, reward, state_new, done = self.buffer.buffer_sample_batch(batch_size=self.batch)
+            state, action, reward, state_new = self.buffer.buffer_sample_batch(batch_size=self.batch)
             state = t.tensor(state, dtype=t.float)
             action = t.tensor(action, dtype=t.float)
             reward = t.tensor(reward, dtype=t.float)
