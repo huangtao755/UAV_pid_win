@@ -1,29 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The file used to describe the dynamic of quadrotor UAV
-
-By xiaobo
-Contact linxiaobo110@gmail.com
-Created on Fri Apr 19 10:40:44 2019
-"""
-
-# Copyright (C)
-#
-# This file is part of QuadrotorFly
-#
-# GWpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# GWpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
-
 
 import enum
 from enum import Enum
@@ -36,23 +12,6 @@ from Evn import SensorCompass
 from Evn import SensorGps
 from Evn import SensorImu
 
-"""
-********************************************************************************************************
-**-------------------------------------------------------------------------------------------------------
-**  Compiler   : python 3.6
-**  Module Name: QuadrotorFlyModel
-**  Module Date: 2019-04-19
-**  Module Auth: xiaobo
-**  Version    : V0.1
-**  Description: create the module
-**-------------------------------------------------------------------------------------------------------
-**  Reversion  :
-**  Modified By:
-**  Date       :
-**  Content    :
-**  Notes      :
-********************************************************************************************************/
-"""
 
 # definition of key constant
 D2R = np.pi / 180

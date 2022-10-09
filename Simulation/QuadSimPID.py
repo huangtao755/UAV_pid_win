@@ -1,3 +1,6 @@
+"""
+introduction
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,6 +13,10 @@ D2R = Qfm.D2R
 
 
 def point_track():
+    """
+
+    :return:
+    """
     print("PID controller test")
     uav_para = Qfm.QuadParas(structure_type=Qfm.StructureType.quad_x)
     sim_para = Qfm.QuadSimOpt(init_mode=Qfm.SimInitType.fixed, init_att=np.array([0, 0, 0]),
@@ -88,6 +95,10 @@ def point_track():
 
 
 def traject_track():
+    """
+
+    :return:
+    """
     print("PID controller test")
     uav_para = Qfm.QuadParas(structure_type=Qfm.StructureType.quad_x)
     sim_para = Qfm.QuadSimOpt(init_mode=Qfm.SimInitType.fixed,
@@ -149,7 +160,7 @@ def traject_track():
             gui.quadGui.target = ref[0:3]
             gui.quadGui.sim_time = quad.ts
             # gui.render()
-        state_temp[8] = state_temp[8] % (2 * np.pi)
+        state_temp[8] = state_temp[8]%(2 * np.pi)
         # print(state_temp[8], ''' angle''')
         record.buffer_append((state_temp, action, err_track))
 

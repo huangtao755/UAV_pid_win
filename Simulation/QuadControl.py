@@ -1,5 +1,9 @@
+"""
+introduction:
+"""
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 from Algorithm.ClassicControl import PidControl
 from Comman import MemoryStore
@@ -7,13 +11,18 @@ from Evn import QuadrotorFlyGui as Qgui
 from Evn import QuadrotorFlyModel as Qfm
 
 D2R = Qfm.D2R
+current_path = os.path.abspath(os.path.join(os.getcwd(), ".."))
 
 
 class QuadControl(object):
+    """
+    :brief:
+    """
     def __init__(self,
                  structure_type=Qfm.StructureType.quad_x,
                  init_att=np.array([0, 0, 0]),
-                 init_pos=np.array([0, 0, 0])):
+                 init_pos=np.array([0, 0, 0]),
+                 name='quad'):
         """
 
         :param structure_type:
@@ -25,12 +34,12 @@ class QuadControl(object):
                                        init_pos=init_pos)
         self.quad = Qfm.QuadModel(self.uav_para, self.sim_para)
         self.pid = PidControl(uav_para=self.uav_para,
-                              kp_pos=np.array([0.5, 0.5, 0.45]),
+                              kp_pos=np.array([0.5, 0.5, 0.5]),
                               ki_pos=np.array([0, 0., 0.0]),
                               kd_pos=np.array([0, 0, 0]),
-                              kp_vel=np.array([1.4, 1.4, 1.6]),
+                              kp_vel=np.array([1.4, 1.4, 1.4]),
                               ki_vel=np.array([0.01, 0.01, 0.01]),
-                              kd_vel=np.array([0.15, 0.15, 0.]),
+                              kd_vel=np.array([0.15, 0.15, 0.1]),
 
                               kp_att=np.array([2, 2, 2.]),
                               ki_att=np.array([0., 0, 0]),
@@ -43,6 +52,8 @@ class QuadControl(object):
         self.record = MemoryStore.DataRecord()
         self.record.clear()
         self.step_num = 0
+
+        self.name = name
 
         self.ref = np.array([0, 0, 0, 0])
         self.ref_v = np.array([0, 0, 0, 0])
@@ -77,6 +88,22 @@ class QuadControl(object):
         if self.step_num == steps:
             print('ending')
             self.record.episode_append()
+
+    def data_save(self):
+        """
+
+        :return:
+        """
+        data = self.record.get_episode_buffer()
+        state_data = data[0]
+        action_data = data[1]
+        track_err_data = data[2]
+        self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_state',
+                              data=state_data)
+        self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_action',
+                              data=action_data)
+        self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_track_err',
+                              data=track_err_data)
 
     def reset(self, att, pos):
         """
@@ -149,8 +176,12 @@ class QuadControl(object):
 
 
 def main():
-    quad1 = QuadControl(init_pos=np.array([-5, 0, 0]))
-    quad2 = QuadControl(init_pos=np.array([-5, 0, 0]))
+    """
+
+    :return:
+    """
+    quad1 = QuadControl(init_pos=np.array([-5, 0, 0]), name='quad1')
+    quad2 = QuadControl(init_pos=np.array([-5, 0, 0]), name='quad2')
     gui = Qgui.QuadrotorFlyGui([quad1.quad, quad2.quad])
     steps = 1000
     ref = np.array([-15, -15, -15, 0])
@@ -184,7 +215,10 @@ def main():
             gui.quadGui.target = ref
             gui.quadGui.sim_time = quad1.quad.ts
             gui.render()
+    quad1.data_save()
     quad2.record.episode_append()
+    quad2.data_save()
+
     quad1.fig_show(1)
     quad2.fig_show(2)
     plt.show()
