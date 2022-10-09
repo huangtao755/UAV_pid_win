@@ -28,7 +28,7 @@ class QuadControl(object):
                               kp_pos=np.array([0.5, 0.5, 0.45]),
                               ki_pos=np.array([0, 0., 0.0]),
                               kd_pos=np.array([0, 0, 0]),
-                              kp_vel=np.array([1.6, 1.6, 1.6]),
+                              kp_vel=np.array([1.4, 1.4, 1.6]),
                               ki_vel=np.array([0.01, 0.01, 0.01]),
                               kd_vel=np.array([0.15, 0.15, 0.]),
 
@@ -152,18 +152,19 @@ def main():
     quad1 = QuadControl(init_pos=np.array([-5, 0, 0]))
     quad2 = QuadControl(init_pos=np.array([-5, 0, 0]))
     gui = Qgui.QuadrotorFlyGui([quad1.quad, quad2.quad])
-    steps = 3000
+    steps = 1000
     ref = np.array([-15, -15, -15, 0])
     for i in range(steps):
-        ref = np.array([5 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
-                        5 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
-                        0.2 * quad1.quad.ts,
-                        np.pi / 18 * quad1.quad.ts])
+        # ref = np.array([5 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
+        #                 5 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
+        #                 0.2 * quad1.quad.ts,
+        #                 np.pi / 18 * quad1.quad.ts])
 
-        ref_v1 = np.array([-np.pi * np.sin(np.pi / 18 * (quad1.quad.ts + quad1.pid.ts) + np.pi) * 5 / 18,
-                           np.pi * np.cos(np.pi / 18 * (quad1.quad.ts + quad1.pid.ts) + np.pi) * 5 / 18,
-                           0.2,
-                           np.pi / 18])  # target velocity
+        # ref_v1 = np.array([-np.pi * np.sin(np.pi / 18 * (quad1.quad.ts) + np.pi) * 5 / 18,
+        #                    np.pi * np.cos(np.pi / 18 * (quad1.quad.ts) + np.pi) * 5 / 18,
+        #                    0.2,
+        #                    np.pi / 18])  # target velocity
+        ref_v1 = np.array([0, 0, 0, 0])
         quad2.state_temp = quad2.quad.observe()
         quad1.track(ref=ref, ref_v=ref_v1, steps=steps)
         state_compensate = quad2.state_temp - np.array([0, 0, 0,
