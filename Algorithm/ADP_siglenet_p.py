@@ -8,11 +8,6 @@ from torch.autograd import Variable
 
 t.manual_seed(5)
 
-state_dim = 12
-v_dim = 1
-action_dim = 4
-learning_rate = 0.005
-learning_num = 1000
 sim_num = 20
 x0 = np.array([2, -1])
 epsilon = 0.0001
@@ -43,25 +38,30 @@ class Model(t.nn.Module):
 ############################################################################################################
 
 class ADPSingleNet(object):
-    def __init__(self, evn, replay_buffer):
+    def __init__(self, evn, replay_buffer,
+                 learning_rate=0.005,
+                 state_dim=12,
+                 action_dim=4):
         """
 
         :param evn:
+        :param replay_buffer:
+        :param learning_rate:
         """
         'init evn'
-        self.evn = evn()
+        self.evn = evn
         self.buffer = replay_buffer
 
-        self.state_dim = evn.state_dim
+        self.state_dim = state_dim
         self.state = np.zeros(state_dim)
-        self.action_dim = evn.action_dim
+        self.action_dim = action_dim
         self.action = np.zeros(action_dim)
-        self.gx = evn.gx
+        self.gx = None
 
         'reward parameter'
-        self.Q = t.tensor(evn.Q)
-        self.R = t.tensor(evn.R)
-        self.gamma = 1
+        # self.Q = t.tensor(evn.Q)
+        # self.R = t.tensor(evn.R)
+        # self.gamma = 1
 
         'init critic net'
         self.critic_eval = Model(input_dim=self.state_dim, output_dim=1)
@@ -90,17 +90,20 @@ class ADPSingleNet(object):
         "Step two: calculate the action according to the HJB function and system dynamic function"
         return action
 
-    def learn(self):
+    def learn(self, learning_num):
         """
 
+        :param learning_num:
         :return:
         """
         for train_index in range(learning_num):
 
             "Step one; get data"
-            state, action, reward, state_new = self.buffer.buffer_sample_batch(batch_size=self.batch)
+            data = self.buffer.buffer_sample_batch(batch_size=self.batch)
+            state, action, state_new, reward = data[0], data[1], data[2], data[3]
+            print(state[0], action[0], state_new[0], reward[0], 'state')
             state = t.tensor(state, dtype=t.float)
-            action = t.tensor(action, dtype=t.float)
+            # action = t.tensor(action, dtype=t.float)
             reward = t.tensor(reward, dtype=t.float)
             state_new = t.tensor(state_new, dtype=t.float)
             "Step one; get data"
@@ -116,6 +119,7 @@ class ADPSingleNet(object):
             critic_loss.backward()
             self.optimizerCritic.step()
             print('_______the Critic Net have updated for %d time_______' % train_index)
+            print('the loss is %f' % critic_loss)
             "calculate the loss and update critic net"
 
             "update parameters of critic target net"

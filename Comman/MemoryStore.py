@@ -80,6 +80,21 @@ class ReplayBuffer(object):
 
         return batch
 
+    @staticmethod
+    def save_data(path, data_name, data):
+        """
+
+        :param path:
+        :param data_name:
+        :param data:
+        :return:
+        """
+        print('---------------------------------------')
+        name = str(path + '//' + data_name + '.csv')
+        print(name)
+        pd.DataFrame(data).to_csv(name)
+        print(data_name + 'data is saved')
+
     def clear(self):
         """
 

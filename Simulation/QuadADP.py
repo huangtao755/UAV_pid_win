@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from Algorithm.ADP_siglenet_p import ADPSingleNet
 from Comman import MemoryStore
 from Evn import QuadrotorFlyModel as Qfm
 
@@ -24,23 +25,13 @@ class QuadADP(object):
                                        init_pos=init_pos)
         self.quad = Qfm.QuadModel(self.uav_para, self.sim_para)
 
-        # get state and action
-        err_state = np.array(pd.read_csv(current_path + '//DataSave//QuadPid//quad1_state_err.csv'))[:, 1:]
-        self.state_old = np.delete(err_state, -1, axis=0)
-        self.state_new = np.delete(err_state, 0, axis=0)
-        action = np.array(pd.read_csv(current_path + '//DataSave//QuadPid//quad1_action.csv'))[:, 1:]
-        self.action = np.delete(action, -1, axis=0)
-
-        self.get_reward(state=self.state_old, action=self.action, ts=self.uav_para.ts)
-        self.reward = np.array(pd.read_csv(current_path + '//DataSave//QuadPid//quad1_reward.csv'))[:, 1:]
-        print(len(self.state_old), len(self.state_new), len(self.action), len(self.reward))
-
         self.replay_buffer = MemoryStore.ReplayBuffer(buffer_size=4999)
         self.replay_buffer.clear()
-        for i in range(len(self.reward)):
-            self.replay_buffer.buffer_append((self.state_old, self.action, self.state_new, self.reward))
-        self.replay_buffer.episode_append(rewards=None)
-        print(self.replay_buffer.count)
+
+        self.state_old, self.action, self.state_new, self.reward = self.get_reward()
+        print(len(self.state_old), len(self.action), len(self.state_new), len(self.reward), 'length')
+
+        self.adp = ADPSingleNet(evn=self.quad, replay_buffer=self.replay_buffer)
 
     @staticmethod
     def calculate_reward(state, action):
@@ -55,35 +46,30 @@ class QuadADP(object):
         reward = state.dot(Q).dot(state.T) + action.dot(R).dot(action.T)
         return reward
 
-    def get_reward(self, state, action, ts):
+    def get_reward(self):
         """
 
         :return:
         """
-        reward = []
-        record_reward = MemoryStore.DataRecord()
-        record_reward.clear()
-
+        rewards = []
         err_state = np.array(pd.read_csv(current_path + '//DataSave//QuadPid//quad1_state_err.csv'))[:, 1:]
-        t = np.array(range(0, len(state))) * ts
-        state = np.delete(err_state, -1, axis=0)
+        state_old = np.delete(err_state, -1, axis=0)
+        state_new = np.delete(err_state, 0, axis=0)
         action = np.array(pd.read_csv(current_path + '//DataSave//QuadPid//quad1_action.csv'))[:, 1:]
         action = np.delete(action, -1, axis=0)
-        for i in range(len(state)):
-            reward.append(self.calculate_reward(state[i], action[i]))
-            record_reward.buffer_append(reward[i])
-        record_reward.episode_append()
-        record_reward.save_data(path=current_path + '//DataSave//QuadPid', data_name='quad1_reward', data=reward)
 
-        # fig = plt.figure(1)
-        # plt.plot(t, action)
-        # fig2 = plt.figure(2)
-        # plt.plot(t, reward)
-        # plt.show()
-
-    def get_replay_buffer(self):
-        pass
+        for i in range(len(state_old)):
+            rewards.append(self.calculate_reward(state_old[i], action[i]))
+            self.replay_buffer.buffer_append(np.hstack((state_old[i], action[i], state_new[i], rewards[i])))
+        self.replay_buffer.episode_append(rewards=None)
+        data = self.replay_buffer.buffer_sample_batch(batch_size=len(state_old))
+        MemoryStore.DataRecord.save_data(path=current_path + '//DataSave//QuadPid',
+                                         data_name='quad1_reward', data=rewards)
+        self.replay_buffer.save_data(path=current_path + '//DataSave//QuadADP',
+                                     data_name='replay_buffer', data=data)
+        return state_old, action, state_new, rewards
 
 
 if __name__ == "__main__":
-    QuadADP()
+    quad_adp = QuadADP()
+    data = quad_adp.replay_buffer.buffer_sample_batch(batch_size=3)
