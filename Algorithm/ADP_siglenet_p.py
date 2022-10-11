@@ -10,7 +10,7 @@ t.manual_seed(5)
 
 sim_num = 20
 x0 = np.array([2, -1])
-epsilon = 0.0001
+epsilon = 1
 Fre_V1_paras = 5
 
 
@@ -21,14 +21,14 @@ Fre_V1_paras = 5
 class Model(t.nn.Module):
     def __init__(self, input_dim, output_dim):
         super(Model, self).__init__()
-        self.lay1 = t.nn.Linear(input_dim, 10, bias=False)
-        self.lay1.weight.data.normal_(0, 0.5)
-        self.lay2 = t.nn.Linear(10, output_dim, bias=False)
-        self.lay2.weight.data.normal_(0, 0.5)
+        self.lay1 = t.nn.Linear(input_dim, 64, bias=False)
+        self.lay1.weight.data.normal_(0, 0.1)
+        self.lay2 = t.nn.Linear(64, output_dim, bias=False)
+        self.lay2.weight.data.normal_(0, 0.1)
 
     def forward(self, x):
         layer1 = self.lay1(x)
-        layer1 = t.nn.functional.relu(layer1)
+        layer1 = t.nn.functional.elu(layer1, alpha=1)
         output = self.lay2(layer1)
         return output
 
@@ -39,7 +39,7 @@ class Model(t.nn.Module):
 
 class ADPSingleNet(object):
     def __init__(self, evn, replay_buffer,
-                 learning_rate=0.005,
+                 learning_rate=0.01,
                  state_dim=12,
                  action_dim=4):
         """
@@ -61,15 +61,16 @@ class ADPSingleNet(object):
         'reward parameter'
         # self.Q = t.tensor(evn.Q)
         # self.R = t.tensor(evn.R)
-        # self.gamma = 1
+        self.gamma = 1
 
         'init critic net'
         self.critic_eval = Model(input_dim=self.state_dim, output_dim=1)
         self.critic_target = Model(input_dim=self.state_dim, output_dim=1)
         self.criterion = t.nn.MSELoss(reduction='mean')
-        self.optimizerCritic = t.optim.SGD(self.critic_eval.parameters(), lr=learning_rate)
+        self.optimizerCritic = t.optim.Adam(self.critic_eval.parameters(),
+                                            lr=learning_rate)
         self.batch = 32
-        self.update_targetNet_freq = 10
+        self.update_targetNet_freq = 20
 
     def choose_action(self, state):
         """
@@ -96,36 +97,53 @@ class ADPSingleNet(object):
         :param learning_num:
         :return:
         """
+        loss = []
         for train_index in range(learning_num):
 
             "Step one; get data"
             data = self.buffer.buffer_sample_batch(batch_size=self.batch)
-            state, action, state_new, reward = data[0], data[1], data[2], data[3]
-            print(state[0], action[0], state_new[0], reward[0], 'state')
+            state = data[:, :self.state_dim]
+            action = data[:, self.state_dim: self.state_dim + self.action_dim]
+            reward = data[:, self.state_dim + self.action_dim]
+            state_new = data[:, -self.state_dim:]
+
             state = t.tensor(state, dtype=t.float)
-            # action = t.tensor(action, dtype=t.float)
+            action = t.tensor(action, dtype=t.float)
             reward = t.tensor(reward, dtype=t.float)
             state_new = t.tensor(state_new, dtype=t.float)
             "Step one; get data"
+            for j in range(5):
+                "Step two: calculate critic value"
+                # critic_input = t.cat(state, action)
+                critic_value = self.critic_eval(Variable(state))
+                # print(critic_value, 'critic_eval')
+                critic_value_next = self.critic_target(Variable(state_new))
+                # print(critic_value_next, 'critic_target')
+                "Step two: calculate critic value"
 
-            "Step two: calculate critic value"
-            critic_value = self.critic_eval(Variable(state))
-            critic_value_next = self.critic_target(Variable(state_new))
-            "Step two: calculate critic value"
+                "calculate the loss and update critic net"
+                critic_loss = self.criterion(critic_value, Variable(reward * 0.01 + self.gamma * critic_value_next))
+                self.optimizerCritic.zero_grad()
+                critic_loss.backward()
+                self.optimizerCritic.step()
+                # print('the loss is %f' % critic_loss)
+                # print('_______the Critic Net have updated for %d time_______' % train_index)
+                "calculate the loss and update critic net"
 
-            "calculate the loss and update critic net"
-            critic_loss = self.criterion(critic_value, Variable(reward + self.gamma * critic_value_next))
-            self.optimizerCritic.zero_grad()
-            critic_loss.backward()
-            self.optimizerCritic.step()
-            print('_______the Critic Net have updated for %d time_______' % train_index)
-            print('the loss is %f' % critic_loss)
-            "calculate the loss and update critic net"
+                loss.append(float(critic_loss))
 
+                if critic_loss < 0.005:
+                    self.critic_target = self.critic_eval
+                    print('update critic_target')
+                    print('training finish')
+                    return loss
             "update parameters of critic target net"
             if train_index % self.update_targetNet_freq == 0:
-                pass
+                self.critic_target = self.critic_eval
+                print('update critic_target')
             "update parameters of critic target net"
+
+        return loss
 
     def save_models(self):
         pass

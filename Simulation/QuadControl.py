@@ -61,6 +61,7 @@ class QuadControl(object):
 
         self.ref = np.array([0, 0, 0, 0])
         self.ref_v = np.array([0, 0, 0, 0])
+        self.track_err = None
         self.fig1 = None
         self.fig2 = None
 
@@ -84,8 +85,10 @@ class QuadControl(object):
                                ref[1] - self.state_temp[1],
                                ref[2] - self.state_temp[2],
                                ref[3] - self.state_temp[8]])
+        self.track_err = track_err[0:3]
         err_state = self.pid.err
-        print((self.state_temp, action, track_err, err_state), 'err_state')
+        print((self.state_temp, action, track_err, err_state), 'err_state',
+              '-------------------------------------------------------------------------------------------------------------------')
         self.record.buffer_append((self.state_temp, action, track_err, err_state))
 
         self.step_num += 1
@@ -100,6 +103,7 @@ class QuadControl(object):
         :return:
         """
         data = self.record.get_episode_buffer()
+        print(len(data))
         state_data = data[0]
         action_data = data[1]
         track_err_data = data[2]
@@ -115,7 +119,7 @@ class QuadControl(object):
             self.record.save_data(path=current_path + '//DataSave//QuadPid', data_name=self.name + '_state_err',
                                   data=err_state)
         else:
-            print('Have no state_err')
+            print(self.name + 'Have no state_err')
 
     def reset(self, att, pos):
         """
@@ -165,7 +169,7 @@ class QuadControl(object):
         plt.ylabel('f (m/s^2)', fontsize=15)
         plt.legend(fontsize=15, bbox_to_anchor=(1, 1.05))
         # print(data)
-        if len(data) == 3:
+        if len(data) == 4:
             err = data[2]
             self.fig1 = plt.figure(int(i * 3 + 1))
             plt.subplot(3, 1, 1)
@@ -195,8 +199,8 @@ def main():
     quad1 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad1')
     quad2 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad2')
     gui = Qgui.QuadrotorFlyGui([quad1.quad, quad2.quad])
-    steps = 5000
-    ref = np.array([-10, -10, -10, 0])
+    steps = 500
+    ref = np.array([-5, -5, -5, 0])
     ref_v = np.array([0, 0, 0, 0])
     for i in range(steps):
         # ref = np.array([3 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
@@ -209,6 +213,7 @@ def main():
         #                  np.pi / 18])  # target velocity
 
         quad2.state_temp = quad2.quad.observe()
+
         quad1.track(ref=ref, ref_v=ref_v, steps=steps)
         state_compensate = quad2.state_temp - np.array([0, 0, 0,
                                                         ref_v[0], ref_v[1], ref_v[2],
@@ -222,6 +227,11 @@ def main():
                                ref[3] - quad2.state_temp[8]])
 
         quad2.record.buffer_append((quad2.state_temp, action2, track_err))
+        sum_err = np.sqrt(np.linalg.norm(quad1.track_err[0:3], ord=2))
+        # print(track_err, sum_err)
+        if sum_err < 0.01:
+            print(i)
+            return print('reach point')
 
         if i % 20 == 0:
             gui.quadGui.target = ref

@@ -128,21 +128,21 @@ def traject_track():
 
     # simulator init
     step_num = 0
-    # ref = np.array([15, -15, -15, 0])
+    ref = np.array([15, -15, -15, 0])
+    ref_v = np.array([0, 0, 0, 0])
     print(quad.observe())
     # simulate begin
     for i in range(3000):
 
-        ref = np.array([2 * np.cos(np.pi / 9 * quad.ts + np.pi),
-                        2 * np.sin(np.pi / 9 * quad.ts + np.pi),
-                        0.2 * quad.ts,
-                        np.pi / 9 * quad.ts])
-
-        ref_v = np.array([-np.pi * np.sin(np.pi / 9 * (quad.ts + pid.ts) + np.pi) * 2 / 9,
-                          np.pi * np.cos(np.pi / 9 * (quad.ts + pid.ts) + np.pi) * 2 / 9,
-                          0.2,
-                          np.pi / 9])  # target velocity
-        # ref_v = ref_v.clip(np.array([-3, -3, -3, -np.pi*2]), np.array([3, 3, 3, np.pi*2]))
+        # ref = np.array([2 * np.cos(np.pi / 9 * quad.ts + np.pi),
+        #                 2 * np.sin(np.pi / 9 * quad.ts + np.pi),
+        #                 0.2 * quad.ts,
+        #                 np.pi / 9 * quad.ts])
+        #
+        # ref_v = np.array([-np.pi * np.sin(np.pi / 9 * (quad.ts + pid.ts) + np.pi) * 2 / 9,
+        #                   np.pi * np.cos(np.pi / 9 * (quad.ts + pid.ts) + np.pi) * 2 / 9,
+        #                   0.2,
+        #                   np.pi / 9])  # target velocity
         state_temp = quad.observe()
         state_compensate = state_temp - np.array([0, 0, 0,
                                                   ref_v[0], ref_v[1], ref_v[2],
@@ -160,7 +160,7 @@ def traject_track():
             gui.quadGui.target = ref[0:3]
             gui.quadGui.sim_time = quad.ts
             # gui.render()
-        state_temp[8] = state_temp[8]%(2 * np.pi)
+        state_temp[8] = state_temp[8] % (2 * np.pi)
         # print(state_temp[8], ''' angle''')
         record.buffer_append((state_temp, action, err_track))
 

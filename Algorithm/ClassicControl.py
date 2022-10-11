@@ -91,8 +91,8 @@ class PidControl(object):
         # ########position loop######## #
         pos = state[0:3]
         ref_pos = ref_state[0:3]
-        err_p_pos_ = ref_pos - pos  # get new error of pos
-        err_p_pos_ = np.array(8 * t.tanh(t.tensor(err_p_pos_ / 8)))
+        err_p_pos_o = ref_pos - pos  # get new error of pos
+        err_p_pos_ = np.array(8 * t.tanh(t.tensor(err_p_pos_o / 8)))
         # err_p_pos_ = err_p_pos_.clip(np.array([-8, -8, -8]), np.array([8, 8, 8]))
 
         if self.step_num == 0:
@@ -194,7 +194,7 @@ class PidControl(object):
         u = a_att * self.uav_par.uavInertia
 
         action = np.array([u1, u[0], u[1], u[2]])
-        self.err = np.array(np.hstack((self.err_p_pos, self.err_p_vel, self.err_p_att, self.err_p_att_v)))
+        self.err = np.array(np.hstack((err_p_pos_o, self.err_p_vel, self.err_p_att, self.err_p_att_v)))
         self.step_num += 1
 
         return action

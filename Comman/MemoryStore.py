@@ -78,7 +78,7 @@ class ReplayBuffer(object):
         else:
             batch = random.sample(self.buffer, batch_size)
 
-        return batch
+        return np.vstack(batch)
 
     @staticmethod
     def save_data(path, data_name, data):
@@ -89,11 +89,11 @@ class ReplayBuffer(object):
         :param data:
         :return:
         """
-        print('---------------------------------------')
+        # print('---------------------------------------')
         name = str(path + '//' + data_name + '.csv')
-        print(name)
+        # print(name)
         pd.DataFrame(data).to_csv(name)
-        print(data_name + 'data is saved')
+        # print(data_name + 'data is saved')
 
     def clear(self):
         """
