@@ -44,8 +44,8 @@ class QuadADP(object):
         :param action:
         :return:
         """
-        Q = 10 * np.eye(len(state))
-        R = 0.5 * np.eye(len(action))
+        Q = 1 * np.eye(len(state))
+        R = 0.01 * np.eye(len(action))
         reward = state.dot(Q).dot(state.T) + action.dot(R).dot(action.T)
         return reward
 

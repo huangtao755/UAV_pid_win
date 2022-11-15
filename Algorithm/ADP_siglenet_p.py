@@ -21,14 +21,14 @@ Fre_V1_paras = 5
 class Model(t.nn.Module):
     def __init__(self, input_dim, output_dim):
         super(Model, self).__init__()
-        self.lay1 = t.nn.Linear(input_dim, 64, bias=False)
+        self.lay1 = t.nn.Linear(input_dim, 64, bias=True)
         self.lay1.weight.data.normal_(0, 0.1)
-        self.lay2 = t.nn.Linear(64, output_dim, bias=False)
+        self.lay2 = t.nn.Linear(64, output_dim, bias=True)
         self.lay2.weight.data.normal_(0, 0.1)
 
     def forward(self, x):
         layer1 = self.lay1(x)
-        layer1 = t.nn.functional.elu(layer1, alpha=1)
+        layer1 = t.nn.functional.elu(layer1)
         output = self.lay2(layer1)
         return output
 
