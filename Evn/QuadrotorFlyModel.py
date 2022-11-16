@@ -17,7 +17,7 @@ from Evn import SensorImu
 D2R = np.pi / 180
 state_dim = 12
 action_dim = 4
-state_bound = np.array([20, 20, 20, 15, 15, 15, 180 * D2R, 180 * D2R, 180 * D2R, 180 * D2R, 180 * D2R, 180 * D2R])
+state_bound = np.array([20, 20, 20, 15, 15, 15, 180 * D2R, 80 * D2R, 180 * D2R, 180 * D2R, 180 * D2R, 180 * D2R])
 action_bound = np.array([1, 1, 1, 1])
 
 
@@ -230,6 +230,7 @@ class QuadModel(object):
 
         # initial the states
         self.reset_states()
+
 
     @property
     def ts(self):

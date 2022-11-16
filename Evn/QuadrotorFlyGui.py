@@ -230,7 +230,7 @@ if __name__ == '__main__':
         print("PID  controller test: ")
         uavPara = Qfm.QuadParas(structure_type=Qfm.StructureType.quad_x)
         simPara = Qfm.QuadSimOpt(init_mode=Qfm.SimInitType.fixed,
-                                 init_att=np.array([0, 0, 0]), init_pos=np.array([0, 0, 15]))
+                                 init_att=np.array([0, 90, 0]), init_pos=np.array([0, 0, 15]))
         quad1 = Qfm.QuadModel(uavPara, simPara)
         record = MemoryStore.DataRecord()
         record.clear()
