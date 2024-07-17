@@ -51,137 +51,196 @@ Define nural network
 *********************************************************************************************************
 """
 
-t.manual_seed(4)
 
-state_dim = 12
-v_dim = 1
-action_dim = 4
-learning_rate = 0.005
-learning_num = 1000
-sim_num = 20
-x0 = np.array([2, -1])
-epislon = 0.0001
-Fre_V1_paras = 5  # 考虑
-
-
-############################################################################################################
-# 定义网络
-############################################################################################################
-class Model(t.nn.Module):
+class PIDSMADP(object):
     def __init__(self):
-        super(Model, self).__init__()
-        self.lay1 = t.nn.Linear(state_dim, 10, bias=False)  # 线性层
-        self.lay1.weight.data.normal_(0, 0.5)  # 权重初始化
-        self.lay2 = t.nn.Linear(10, 1, bias=False)  # 线性层
-        self.lay2.weight.data.normal_(0, 0.5)  # 权重初始化
+        self.kp = 0.
+        self.kd = 0.
 
-    def forward(self, x):
-        layer1 = self.lay1(x)  # 第一隐层
-        layer1 = t.nn.functional.relu(layer1)  # relu激活函数
-        output = self.lay2(layer1)  # 输出层
-        return output
+        self.u_kp = 0
+        self.u_kd = 0
+        self.u = np.array([self.u_kp, self.u_kd])
+
+        self.r = np.diag([1, 1])
+
+        self.w = 0.01*np.ones(6)
+        self.phi = np.zeros(6)
+        self.d_phi = np.zeros((3, 6))
+
+    def get_phi(self, state):
+        s = state[0]
+        kp = state[1]
+        kd = state[2]
+        self.phi = np.array([s**2, kp**2, kd**2, s*kp, s*kd, kp*kd])
+
+    def get_d_phi(self, state):
+        s = state[0]
+        kp = state[1]
+        kd = state[2]
+        self.d_phi = np.array([[2*s, 0, 0, kp, kd, 0],
+                               [0, 2*kp, 0, s, 0, kd],
+                               [0, 0, 2*kd, 0, s, kp]])
+
+    def u_star(self, state, dt=0.01):
+        self.get_d_phi(state)
+
+        self.u_kp = -1/2 / self.r[0, 0] * self.d_phi[1, :].dot(self.w)
+        self.u_kd = -1/2 / self.r[1, 1] * self.d_phi[2, :].dot(self.w)
+
+        print(self.u_kp, 'u_kp')
+        print(self.u_kp > 0)
+        print(self.kp, 'kp_old')
+        self.kp = self.kp + self.u_kp*dt
+
+        print(self.kp, 'kpp')
+
+        self.kd = self.kd + self.u_kd * dt
+        self.u = np.array([self.u_kp, self.u_kd])
+        return self.u_kp, self.u_kd
+
+    def reset(self):
+        self.kp = 0
+        self.kd = 0
+
+    def trainI(self, state, state_, r, v, dt=0.01, lr=0.001):
+        r = np.array(r)
+        v = np.array(v)
+        r = r + v.dot(self.r).dot(v.T)
+
+        self.get_phi(state)
+        phi = self.phi
+        self.get_phi(state_)
+        phi_ = self.phi
+        delta_phi = phi_ - phi
+        print(delta_phi, 'delta_phi')
+        e_h = r * dt + self.w @ delta_phi + np.random.randn(1)*0.00
+
+        m = delta_phi.T@delta_phi + 1
+        print(m, 'm')
+        self.w = self.w - lr * delta_phi/m**2*e_h
+        print(self.w, 'w')
 
 
-class HDP_P():
-    def __init__(self, env):
-        self.env = env
+class SMADP(object):
+    def __init__(self):
+        self.u = 0.
 
-        self.V1_model = Model()  # 定义V1网络
-        self.V2_model = Model()  # 定义V2网络
-        self.A_model = Model()  # 定义A网络
-        self.criterion = t.nn.MSELoss(reduction='mean')  # 平方误差损失
+        self.v = 0.
 
-        # 训练一定次数，更新Critic Net的参数
-        # 这里只需要定义A网络和V2网络的优化器
-        self.optimizerV2 = t.optim.SGD(self.V2_model.parameters(), lr=learning_rate)  # 利用梯度下降算法优化model.parameters
-        self.optimizerA = t.optim.SGD(self.A_model.parameters(), lr=learning_rate)  # 利用梯度下降算法优化model.parameters
+        self.r = 0.1
 
-        # 采样状态  将状态定义在x1 [-2,2]   x2 [-1,1]
-        x = np.arange(-2, 2, 0.1)
-        y = np.arange(-1, 1, 0.1)
-        xx, yy = np.meshgrid(x, y)  # 为一维的矩阵
-        self.state = np.transpose(np.array([xx.ravel(), yy.ravel()]))  # 所有状态
-        self.state_num = self.state.shape[0]  # 状态个数
+        self.w = 0.0001*np.ones(3)
+        self.phi = np.zeros(3)
+        self.d_phi = np.zeros((2, 3))
 
-        # 动作采样  将输入定在[-10 10] 内
-        self.action = np.arange(-10, 10, 0.1)
-        self.cost = []  # 初始化误差矩阵
+    def get_phi(self, state):
+        s = state[0]
+        u = state[1]
+        self.phi = np.array([s**2, u**2, s*u])
 
-    def reward(self, sk, uk):
-        Q = t.eye(sk.shape)
-        R = t.eye(uk.shape)
-        reward = t.mm(t.mm(sk.T, Q), sk) + t.mm(t.mm(uk.T, R), uk)
-        return reward
+    def get_d_phi(self, state):
+        s = state[0]
+        u = state[1]
+        self.d_phi = np.array([[2*s, 0, u],
+                               [0, 2*u, s]])
 
-    def J_loss(self, sk, uk, Vk_1):
-        Vk = np.zeros(uk.shape[0])
-        for i in range(uk.shape[0]):
-            Vk[i] = self.reward(sk, uk) + Vk_1[i]
-        return Vk
+    def u_star(self, state, dt=0.01):
+        self.get_d_phi(state)
 
-    def learning(self):
-        for train_index in range(learning_num):
-            print("the", train_index + 1, "--th learning start")
+        self.v = -1/2 / self.r * self.d_phi[1, :].dot(self.w)
 
-            last_V_value = self.V2_model(Variable(t.Tensor(self.state)))
+        print(self.u_kp, 'u_kp')
+        print(self.u_kp > 0)
+        print(self.kp, 'kp_old')
+        self.kp = self.kp + self.u_kp*dt
 
-            ############################################################################################################
-            # 更新Critic网络
-            ############################################################################################################
-            V2_predict = self.V2_model(Variable(t.Tensor(self.state)))  # 估值网络的预测值
+        print(self.kp, 'kpp')
 
-            la_u = self.A_model(Variable(t.Tensor(self.state)))  # 计算动作输出
-            la_next_state = self.env(self.state, self.la_u)
-            V2_target = np.zeros([self.state_num, 1])
-            for index in range(self.state_num):
-                next_V1 = self.V1_model(Variable(t.Tensor(la_next_state[index, :])))
-                V2_target[index] = self.reward(self.state, la_u.dara) + next_V1
+        self.kd = self.kd + self.u_kd * dt
+        self.u = np.array([self.u_kp, self.u_kd])
+        return self.u_kp, self.u_kd
 
-            V2_loss = self.criterion(V2_predict, Variable(t.tensor(V2_target)))
-            self.optimizerV2.zero_grad()
-            V2_loss.backward()
-            self.optimizerV2.step()
+    def reset(self):
+        self.kp = 0
+        self.kd = 0
 
-            print('--------the', train_index + 1, 'Critic Net have updated---------')
+    def trainI(self, state, state_, r, v, dt=0.01, lr=0.01):
+        r = np.array(r)
+        v = np.array(v)
+        r = r + v.dot(self.r).dot(v.T)
 
-            ############################################################################################################
-            # 更新Actor网络
-            ############################################################################################################
-            A_predict = self.A_model(Variable(t.Tensor(self.state)))  # 网络输出值
+        self.get_phi(state)
+        phi = self.phi
+        self.get_phi(state_)
+        phi_ = self.phi
+        delta_phi = phi_ - phi
+        print(delta_phi, 'delta_phi')
+        e_h = r * dt + self.w @ delta_phi + np.random.randn(1)*0.001
 
-            A_target = np.zeros([self.state_num, 1])
-            for index in range(self.state_num):
-                new_state = np.tile(self.state[index, :], (self.action.shape[0], 1))
-                new_next_state = self.evn(new_state, self.action)
-                next_V1 = self.V1_model(Variable(t.Tensor(new_next_state)))
-                A1 = self.J_loss(self.state[index, :], self.action, next_V1.data)
-                A_target_index = np.argmin(A1)
-                A_target[index] = self.action[A_target_index]
+        m = delta_phi.T@delta_phi + 1
+        print(m, 'm')
+        self.w = self.w - lr * delta_phi/m**2*e_h
+        print(self.w, 'w')
 
-            A_loss = self.criterion(A_predict, Variable(torch.Tensor(A_target)))
-            self.optimizerA.zero_grad()
-            A_loss.backward()
-            self.optimizerA.step()
 
-            print('--------the', train_index + 1, 'Actor Net have updated---------')
+class PSMADP(object):
+    def __init__(self):
+        self.kp = 0.
 
-            if (train_index + 1) % Fre_V1_paras == 0:
-                self.V1_model = self.V2_model
-                print('-------Use V2 Net update V1 Net-------')
+        self.u_kp = 0
+        self.u = np.array([self.u_kp])
 
-            print('A paras:\n', list(self.A_model.named_parameters()))
-            print('V1 paras:\n', list(self.V1_model.named_parameters()))
-            print('V2 paras:\n', list(self.V2_model.named_parameters()))
+        self.r = np.diag([1])
 
-            V_value = self.V2_model(Variable(torch.Tensor(self.state))).data
-            eor = np.abs(V_value) - np.abs(last_V_value)
-            print('误差提升', eor)
-            dis = np.sum(np.array(eor.reshape(self.state_num)))
-            self.cost.append(np.abs(dis))
-            print('-------deta(V)', np.abs(dis))
-            if np.abs(dis) < epislon:
-                print('Loss 小于阈值，退出训练')
-                self.V1_model = self.V2_model
-                break
-        # torch.save(model_objec, 'model.pth')
-        # model = torch.load('model.pth')
+        self.w = 0.01*np.ones(3)
+        self.phi = np.zeros(3)
+        self.d_phi = np.zeros((3, 3))
+
+    def get_phi(self, state):
+        s = state[0]
+        kp = state[1]
+        self.phi = np.array([s**2, kp**2, s*kp])
+
+    def get_d_phi(self, state):
+        s = state[0]
+        kp = state[1]
+        self.d_phi = np.array([[2*s, 0, kp],
+                               [0, 2*kp, s]])
+
+    def u_star(self, state, dt=0.01):
+        self.get_d_phi(state)
+        print(self.r)
+        print(self.d_phi[1, :])
+        print(self.w)
+        self.u_kp = -1/2 / self.r[0] * self.d_phi[1, :].dot(self.w)
+
+        print(self.u_kp, 'u_kp')
+        print(self.u_kp > 0)
+        print(self.kp, 'kp_old')
+        self.kp = self.kp + self.u_kp*dt
+
+        print(self.kp, 'kpp')
+
+        self.u = np.array([self.u_kp])
+        return self.u_kp
+
+    def reset(self):
+        self.kp = 0
+
+    def trainI(self, state, state_, r, v, dt=0.01, lr=0.001):
+        r = np.array(r)
+        v = np.array(v)
+        r = r + v.dot(self.r).dot(v.T)
+
+        self.get_phi(state)
+        phi = self.phi
+        self.get_phi(state_)
+        phi_ = self.phi
+        delta_phi = phi_ - phi
+        print(delta_phi, 'delta_phi')
+        e_h = r * dt + self.w @ delta_phi + np.random.randn(1)*0.00
+
+        m = delta_phi.T@delta_phi + 1
+        print(m, 'm')
+        self.w = self.w - lr * delta_phi/m**2*e_h
+        print(self.w, 'w')

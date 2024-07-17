@@ -199,18 +199,18 @@ def main():
     quad1 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad1')
     quad2 = QuadControl(init_pos=np.array([0, 0, 0]), name='quad2')
     gui = Qgui.QuadrotorFlyGui([quad1.quad, quad2.quad])
-    steps = 500
+    steps = 100000
     ref = np.array([-5, -5, -5, 0])
     ref_v = np.array([0, 0, 0, 0])
     for i in range(steps):
-        # ref = np.array([3 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
-        #                 3 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
-        #                 0.2 * quad1.quad.ts,
-        #                 np.pi / 18 * quad1.quad.ts])
-        # ref_v = np.array([-np.pi * np.sin(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
-        #                  np.pi * np.cos(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
-        #                  0.2,
-        #                  np.pi / 18])  # target velocity
+        ref = np.array([3 * np.cos(np.pi / 18 * quad1.quad.ts + np.pi),
+                        3 * np.sin(np.pi / 18 * quad1.quad.ts + np.pi),
+                        0.2 * quad1.quad.ts,
+                        np.pi / 18 * quad1.quad.ts])
+        ref_v = np.array([-np.pi * np.sin(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
+                         np.pi * np.cos(np.pi / 18 * quad1.quad.ts + np.pi) * 3 / 18,
+                         0.2,
+                         np.pi / 18])  # target velocity
 
         quad2.state_temp = quad2.quad.observe()
 

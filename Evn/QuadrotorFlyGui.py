@@ -12,7 +12,7 @@ from Evn import QuadrotorFlyModel as Qfm
 
 
 class QuadrotorFlyGuiEnv(object):
-    def __init__(self, bound_x=10., bound_y=10., bound_z=15.):
+    def __init__(self, bound_x=20., bound_y=20., bound_z=15.):
         """Define the environment of quadrotor simulation
         :param bound_x:
         :param bound_y:
@@ -88,6 +88,7 @@ class QuadrotorFlyGuiUav(object):
                 head_x, = self.ax.plot([], [], [], marker='o', color='green', markersize=6, antialiased=False)
                 self.quadGui.append({'pos': pos, 'attu': attu, 'hub': hub, 'barX': bar_x, 'barY': bar_y, 'label': label,
                                      'target_point': target_point, 'head_x': head_x, 'origin_point': origin_point})
+
             elif quad_temp.uavPara.structureType == Qfm.StructureType.quad_x:
                 front_bar1, = self.ax.plot([], [], [], color='red', linewidth=4, antialiased=False)
                 front_bar2, = self.ax.plot([], [], [], color='red', linewidth=4, antialiased=False)
